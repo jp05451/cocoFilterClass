@@ -18,16 +18,16 @@ def update_progress(progress):
         progress = 1
     block = int(round(bar_length * progress))
     clear_output(wait = True)
-    text = "Progress: [{0}] {1:.1f}%".format( "#" * block + "-" * (bar_length - block), progress * 100)
-    print(text)
+    text = "Progress: [{0}] {1:.3f}%".format( "#" * block + "-" * (bar_length - block), progress * 100)
+    print(text,end="\r")
     
 
 if __name__ == "__main__":
     current_path = os.path.abspath(os.getcwd())
 
-    COCO_ANNOTATIONS_PATH = current_path + "/annotations/instances_train2017.json"
-    COCO_IMAGES_DIRECTORY = current_path + "/train2017/"
-    EXTRACTED_SAVING_PATH = current_path + "/train/"
+    COCO_ANNOTATIONS_PATH = current_path + "/annotations/instances_val2017.json"
+    COCO_IMAGES_DIRECTORY = current_path + "/val2017/"
+    EXTRACTED_SAVING_PATH = current_path + "/valid/"
     SAVE_FOLDER = EXTRACTED_SAVING_PATH.split('/')[len(EXTRACTED_SAVING_PATH.split('/'))-2]
 
     if not os.path.exists(EXTRACTED_SAVING_PATH):
@@ -44,6 +44,7 @@ if __name__ == "__main__":
         for line in f.readlines():
             target_classes.append(line.strip())
 
+    #filter class from json
     img_dict = {}
     for classes in target_classes:
         catIds = coco.getCatIds(catNms=[classes])
