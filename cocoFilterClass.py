@@ -5,8 +5,9 @@ from xml.dom.minidom import parseString
 from lxml.etree import Element, SubElement, tostring
 from IPython.display import clear_output
 
-IMAGE_FOLDER = "datasets/Offroad-Dataset-II-1/train"
-LABEL_FOLDER = "datasets/Offroad-Dataset-II-1/train/_annotations.coco.json"
+IMAGE_FOLDER = "datasets/Offroad-Dataset-II-1/valid"
+LABEL_FOLDER = "datasets/Offroad-Dataset-II-1/valid/_annotations.coco.json"
+OUTPUT_FOLDER = "valid"
 
 
 # Function to update and display the progress bar
@@ -81,8 +82,28 @@ def yoloV8Format(img_dict):
         annotations = coco.loadAnns(annotation_ids)
 
         image_meta = coco.loadImgs(annotations[0]["image_id"])[0]
+        # Copy the image file to the target folder
+        source_image_path = os.path.join(COCO_IMAGES_DIRECTORY, image_meta["file_name"])
+        target_image_path = os.path.join(
+            EXTRACTED_SAVING_PATH, "images", image_meta["file_name"]
+        )
+        if not os.path.exists(os.path.join(EXTRACTED_SAVING_PATH, "images")):
+            os.makedirs(os.path.join(EXTRACTED_SAVING_PATH, "images"))
+
+        # Check if the image file already exists in the target directory
+        # If it doesn't exist, copy it from the source directory
+        # to the target directory
+        if not os.path.exists(target_image_path):
+            copyfile(source_image_path, target_image_path)
+
+        # Create the directory for the YOLO format if it doesn't exist
+        if not os.path.exists(os.path.join(EXTRACTED_SAVING_PATH, "labels")):
+            os.makedirs(os.path.join(EXTRACTED_SAVING_PATH, "labels"))
+
         filename = os.path.join(
-            EXTRACTED_SAVING_PATH, image_meta["file_name"].replace("jpg", "txt")
+            EXTRACTED_SAVING_PATH,
+            "labels",
+            image_meta["file_name"].replace("jpg", "txt"),
         )
 
         with open(filename, "w+", encoding="utf8") as f:
@@ -174,7 +195,7 @@ current_path = os.path.abspath(os.getcwd())
 # Define paths for COCO annotations, images, and extracted dataset
 COCO_ANNOTATIONS_PATH = os.path.join(current_path, LABEL_FOLDER)
 COCO_IMAGES_DIRECTORY = os.path.join(current_path, IMAGE_FOLDER)
-EXTRACTED_SAVING_PATH = os.path.join(current_path, "result")
+EXTRACTED_SAVING_PATH = os.path.join(current_path, OUTPUT_FOLDER)
 SAVE_FOLDER = os.path.basename(os.path.dirname(EXTRACTED_SAVING_PATH))
 
 # Create the directory for extracted dataset if it doesn't exist
@@ -208,5 +229,5 @@ for classes in target_classes:
 
 # Run the desired output format function
 # tensorflowFormat(img_dict)
-# yoloV8Format(img_dict)
-cocoFormat(img_dict)
+yoloV8Format(img_dict)
+# cocoFormat(img_dict)
