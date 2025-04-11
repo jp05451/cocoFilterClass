@@ -5,8 +5,9 @@ from xml.dom.minidom import parseString
 from lxml.etree import Element, SubElement, tostring
 from IPython.display import clear_output
 
-IMAGE_FOLDER="train2017"
-LABEL_FOLDER="annotations/instances_train2017.json"
+IMAGE_FOLDER = "datasets/Offroad-Dataset-II-1/train"
+LABEL_FOLDER = "datasets/Offroad-Dataset-II-1/train/_annotations.coco.json"
+
 
 # Function to update and display the progress bar
 def update_progress(progress):
@@ -24,7 +25,8 @@ def update_progress(progress):
     text = "Progress: [{0}] {1:.1f}%".format(
         "#" * block + "-" * (bar_length - block), progress * 100
     )
-    print(text,end="\r")
+    print(text, end="\r")
+
 
 # Function to output the data in TensorFlow CSV format
 def tensorflowFormat(img_dict):
@@ -51,6 +53,58 @@ def tensorflowFormat(img_dict):
                     )
 
             update_progress(progress / total_progress)
+
+
+def yoloV8Format(img_dict):
+    # category_mapping = {
+    #     0: "person",
+    #     1: "bicycle",
+    #     2: "car",
+    #     3: "motorcycle",
+    #     5: "bus",
+    #     7: "truck",
+    #     8: "dog",
+    #     9: "cat",
+
+    # }
+    category_mapping = {10: "rough_trail", 11: "puddle"}
+
+    # Reverse the classes dictionary to get class ID from class name
+    class_ids = {v: k for k, v in category_mapping.items()}
+
+    total_progress = len(img_dict)
+    progress = 0
+
+    for img_id in img_dict:
+        progress += 1
+        annotation_ids = coco.getAnnIds(img_id)
+        annotations = coco.loadAnns(annotation_ids)
+
+        image_meta = coco.loadImgs(annotations[0]["image_id"])[0]
+        filename = os.path.join(
+            EXTRACTED_SAVING_PATH, image_meta["file_name"].replace("jpg", "txt")
+        )
+
+        with open(filename, "w+", encoding="utf8") as f:
+            for ann in annotations:
+                entity_id = ann["category_id"]
+                entity = coco.loadCats(entity_id)[0]["name"]
+
+                if entity in target_classes:
+                    bbox = ann["bbox"]
+                    # Convert bbox to YOLO format (normalized)
+                    x_center = (bbox[0] + bbox[2] / 2) / image_meta["width"]
+                    y_center = (bbox[1] + bbox[3] / 2) / image_meta["height"]
+                    width = bbox[2] / image_meta["width"]
+                    height = bbox[3] / image_meta["height"]
+
+                    class_id = class_ids[entity]
+
+                    f.write(
+                        f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n"
+                    )
+
+        update_progress(progress / total_progress)
 
 
 # Function to output the data in COCO XML format
@@ -118,11 +172,9 @@ def cocoFormat(img_dict):
 current_path = os.path.abspath(os.getcwd())
 
 # Define paths for COCO annotations, images, and extracted dataset
-COCO_ANNOTATIONS_PATH = os.path.join(
-    current_path,LABEL_FOLDER
-)
-COCO_IMAGES_DIRECTORY = os.path.join(current_path,IMAGE_FOLDER)
-EXTRACTED_SAVING_PATH = os.path.join(current_path, "extracted_dataset")
+COCO_ANNOTATIONS_PATH = os.path.join(current_path, LABEL_FOLDER)
+COCO_IMAGES_DIRECTORY = os.path.join(current_path, IMAGE_FOLDER)
+EXTRACTED_SAVING_PATH = os.path.join(current_path, "result")
 SAVE_FOLDER = os.path.basename(os.path.dirname(EXTRACTED_SAVING_PATH))
 
 # Create the directory for extracted dataset if it doesn't exist
@@ -154,7 +206,7 @@ for classes in target_classes:
         img_dict[imgID] = content + classes
 
 
-
 # Run the desired output format function
-tensorflowFormat(img_dict)
-# cocoFormat(img_dict)
+# tensorflowFormat(img_dict)
+# yoloV8Format(img_dict)
+cocoFormat(img_dict)
