@@ -9,3 +9,5 @@ extracted_dataset
 *.txt
 *.jpg
 __pycache__
+*.yaml
+*.zip
