@@ -3,4 +3,8 @@ zip
 train2017
 val2017
 datasets
-
+extracted_dataset
+*.json
+*.xml
+*.txt
+*.jpg
